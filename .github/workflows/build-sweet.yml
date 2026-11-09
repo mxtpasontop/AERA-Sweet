@@ -28,7 +28,7 @@ jobs:
       AERA_BUILD_DEVICE: sweet
       JOBS: ${{ inputs.jobs }}
       USE_CCACHE: '0'
-      GOMEMLIMIT: 8GiB
+      GOMEMLIMIT: 10GiB
       GOGC: '50'
       GOMAXPROCS: '2'
 
@@ -70,6 +70,13 @@ jobs:
             --fail-fast -j4 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/sync.log"
           repo manifest -r -o "$GITHUB_WORKSPACE/artifacts/build-manifest.xml"
           df -h . | tee "$GITHUB_WORKSPACE/artifacts/disk-after-sync.txt"
+
+      - name: Forward resource settings to the isolated Soong builder
+        run: |
+          git -C android/build/soong apply --check "$GITHUB_WORKSPACE/ci/soong-go-runtime.patch"
+          git -C android/build/soong apply "$GITHUB_WORKSPACE/ci/soong-go-runtime.patch"
+          cp ci/soong-go-runtime.patch artifacts/
+          git -C android/build/soong diff > artifacts/soong-resource-settings.diff
 
       - name: Prepare sweet device tree
         run: |
