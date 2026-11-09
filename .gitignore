@@ -1,0 +1,4 @@
+/android/
+/artifacts/
+__pycache__/
+*.pyc

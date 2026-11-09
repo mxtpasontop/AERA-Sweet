@@ -1,0 +1,108 @@
+name: Build AERA for sweet
+
+on:
+  workflow_dispatch:
+    inputs:
+      jobs:
+        description: Parallel build jobs
+        required: true
+        default: '2'
+        type: choice
+        options: ['2', '3', '4']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aera-sweet-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  recovery:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    defaults:
+      run:
+        shell: bash
+    env:
+      AERA_BUILD_DEVICE: sweet
+      JOBS: ${{ inputs.jobs }}
+      USE_CCACHE: '0'
+
+    steps:
+      - name: Check out port and build helpers
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Reclaim unused hosted-runner tools
+        run: bash ci/prepare-runner.sh
+
+      - name: Install Android build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            git gnupg flex bison build-essential zip curl zlib1g-dev \
+            libc6-dev-i386 lib32ncurses-dev x11proto-core-dev libx11-dev \
+            lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip \
+            fontconfig python3 rsync bc cpio lzop lz4 libssl-dev libelf-dev
+          sudo apt-get clean
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl --fail --location --retry 3 \
+            https://storage.googleapis.com/git-repo-downloads/repo \
+            -o "$RUNNER_TEMP/bin/repo"
+          chmod +x "$RUNNER_TEMP/bin/repo"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+          git config --global user.name 'AERA sweet build'
+          git config --global user.email 'aera-sweet-build@users.noreply.github.com'
+
+      - name: Sync AERA Android 16 sources
+        timeout-minutes: 150
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/artifacts" "$GITHUB_WORKSPACE/android"
+          cd "$GITHUB_WORKSPACE/android"
+          repo init -u https://github.com/AERA-Recovery/android_manifest.git \
+            -b aera-16.0 --depth=1
+          repo sync -c --no-clone-bundle --no-tags --optimized-fetch \
+            --fail-fast -j4 2>&1 | tee "$GITHUB_WORKSPACE/artifacts/sync.log"
+          repo manifest -r -o "$GITHUB_WORKSPACE/artifacts/build-manifest.xml"
+          df -h . | tee "$GITHUB_WORKSPACE/artifacts/disk-after-sync.txt"
+
+      - name: Prepare sweet device tree
+        run: |
+          python3 prepare_tree.py "$GITHUB_WORKSPACE/android/device/xiaomi/sweet"
+          cp aera-sweet.patch artifacts/
+          git rev-parse HEAD > artifacts/port-commit.txt
+          git -C android/bootable/recovery rev-parse HEAD > artifacts/recovery-commit.txt
+          git -C android/vendor/recovery rev-parse HEAD > artifacts/vendor-commit.txt
+
+      - name: Build and check recovery image
+        timeout-minutes: 180
+        run: |
+          bash build.sh "$GITHUB_WORKSPACE/android" 2>&1 | tee artifacts/build.log
+          cp android/out/target/product/sweet/recovery.img artifacts/AERA-sweet-UNTESTED.img
+          cd artifacts
+          sha256sum AERA-sweet-UNTESTED.img > AERA-sweet-UNTESTED.img.sha256
+          printf 'Built successfully. Device boot, touch, decryption and storage operations remain untested.\n' > STATUS.txt
+          echo 'Recovery image built and structurally checked; real-device validation is pending.' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Collect diagnostics
+        if: always()
+        run: |
+          mkdir -p artifacts
+          df -h > artifacts/disk-final.txt
+          free -h > artifacts/memory-final.txt
+          for log in android/out/error.log android/out/soong.log; do
+            if [[ -f "$log" ]]; then cp "$log" artifacts/; fi
+          done
+          if [[ -f android/out/verbose.log.gz ]]; then cp android/out/verbose.log.gz artifacts/; fi
+
+      - name: Upload image, provenance and build logs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: AERA-sweet-${{ github.run_number }}-${{ job.status }}
+          path: artifacts/
+          if-no-files-found: warn
+          retention-days: 7
+          compression-level: 1

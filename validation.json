@@ -1,0 +1,9 @@
+{
+  "header_fixture": "PASS: basic header and size checks only; boot/decryption remain unverified.\nBytes: 16384\nSHA-256: ec758b8a7ab7c4f12a6dba077f55da3134a9c17691863d3c6034941ecab45355",
+  "wrong_header_rejected": "FAIL: expected 4096-byte pages and header v2 for this tree.",
+  "truncated_rejected": "FAIL: declared boot-image components exceed the file length.",
+  "oversized_rejected": "FAIL: image exceeds the 128 MiB recovery partition.",
+  "setup_roundtrip": "All tracked file payloads, plus vendorsetup.sh, match the adapted source.",
+  "limitations": "No Android build, boot test, decryption test or hardware feature test has run.",
+  "actions_workflow": "actionlint v1.7.12 passed; bash syntax checks passed. No remote workflow run yet."
+}

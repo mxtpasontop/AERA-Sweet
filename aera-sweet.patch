@@ -1,0 +1,274 @@
+diff --git a/BoardConfig.mk b/BoardConfig.mk
+index 01c6a9f..1c33b42 100644
+--- a/BoardConfig.mk
++++ b/BoardConfig.mk
+@@ -14,6 +14,8 @@
+ # limitations under the License.
+ #
+ 
++DEVICE_PATH := device/xiaomi/sweet
++
+ # Architecture
+ TARGET_ARCH := arm64
+ TARGET_ARCH_VARIANT := armv8-a
+@@ -78,7 +80,7 @@ BOARD_AVB_RECOVERY_KEY_PATH := external/avb/test/data/testkey_rsa4096.pem
+ BOARD_AVB_RECOVERY_ALGORITHM := SHA256_RSA4096
+ BOARD_AVB_RECOVERY_ROLLBACK_INDEX := 1
+ BOARD_AVB_RECOVERY_ROLLBACK_INDEX_LOCATION := 1
+-BOARD_AVB_MAKE_VBMETA_IMAGE_ARGS += --flag 2
++BOARD_AVB_MAKE_VBMETA_IMAGE_ARGS += --flags 2
+ 
+ # Partitions
+ BOARD_FLASH_BLOCK_SIZE := 262144
+@@ -88,7 +90,8 @@ BOARD_RECOVERYIMAGE_PARTITION_SIZE := 134217728
+ # Dynamic Partition
+ BOARD_SUPER_PARTITION_SIZE := 9126805504
+ BOARD_SUPER_PARTITION_GROUPS := qti_dynamic_partitions
+-BOARD_QTI_DYNAMIC_PARTITIONS_SIZE := 9126805504
++# LineageOS 23.2 reserves 4 MiB for super metadata.
++BOARD_QTI_DYNAMIC_PARTITIONS_SIZE := 9122611200
+ BOARD_QTI_DYNAMIC_PARTITIONS_PARTITION_LIST := product vendor system system_ext odm
+ 
+ BOARD_ROOT_EXTRA_FOLDERS := bluetooth dsp firmware persist
+@@ -102,7 +105,7 @@ BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
+ 
+ # Recovery
+ BOARD_HAS_LARGE_FILESYSTEM := true
+-TW_CUSTOM_CPU_TEMP_PATH := /sys/devices/virtual/thermal/thermal_zone18/temp
++AERA_CUSTOM_CPU_TEMP_PATH := /sys/devices/virtual/thermal/thermal_zone18/temp
+ 
+ # Crypto
+ BOARD_USES_QCOM_FBE_DECRYPTION := true
+@@ -110,3 +113,19 @@ BOARD_USES_METADATA_PARTITION := true
+ 
+ BUILD_BROKEN_MISSING_REQUIRED_MODULES := true
+ 
++
++# AERA native UI; runtime behavior requires a real-device boot test.
++AERA_UI_ADAPTIVE_RESOLUTION := true
++AERA_DEVICE_VERSION := sweet_bringup
++AERA_FRAMERATE := 60
++AERA_INCLUDE_CRYPTO := true
++AERA_INCLUDE_CRYPTO_FBE := true
++AERA_INCLUDE_FBE_METADATA_DECRYPT := true
++AERA_USE_FSCRYPT_POLICY := 2
++AERA_ENABLE_WLAN := 0
++AERA_ENABLE_ROOT_MANAGER := 0
++AERA_ENABLE_MOBILE_DATA := 0
++AERA_SUPPORT_FINGERPRINT := 0
++
++# Android 16 recovery's Soong extension modules.
++BUILD_BROKEN_PLUGIN_VALIDATION := soong-libaosprecovery_defaults soong-libguitwrp_defaults soong-libminuitwrp_defaults soong-vold_defaults
+diff --git a/device.mk b/device.mk
+index b17597d..fd78e5f 100644
+--- a/device.mk
++++ b/device.mk
+@@ -18,9 +18,6 @@
+ TARGET_SCREEN_HEIGHT := 2400
+ TARGET_SCREEN_WIDTH := 1080
+ 
+-PRODUCT_SOONG_NAMESPACES += \
+-    vendor/qcom/opensource/commonsys-intf/display
+-
+ PRODUCT_PACKAGES += \
+     qcom_decrypt \
+     qcom_decrypt_fbe \
+@@ -37,50 +34,54 @@ TARGET_COPY_OUT_VENDOR := vendor
+ PRODUCT_USE_DYNAMIC_PARTITIONS := true
+ 
+ # Crypto
+-TW_INCLUDE_CRYPTO := true
+-TW_INCLUDE_CRYPTO_FBE := true
+-TW_INCLUDE_FBE_METADATA_DECRYPT := true
+-PLATFORM_SECURITY_PATCH := 2099-12-31
+-VENDOR_SECURITY_PATCH := 2099-12-31
+-PLATFORM_VERSION := 99.87.36
+-PLATFORM_VERSION_LAST_STABLE := $(PLATFORM_VERSION)
++AERA_INCLUDE_CRYPTO := true
++AERA_INCLUDE_CRYPTO_FBE := true
++AERA_INCLUDE_FBE_METADATA_DECRYPT := true
+ 
+ # Recovery
+ TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
+ TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/recovery/root/system/etc/recovery.fstab
+-TARGET_RECOVERY_DEVICE_MODULES += libion vendor.display.config@1.0 vendor.display.config@2.0 libdisplayconfig.qti
++TARGET_RECOVERY_DEVICE_MODULES += libion
+ 
+-# TWRP specific build flags
+-TW_THEME := portrait_hdpi
++# AERA recovery configuration
++AERA_THEME := portrait_hdpi
+ RECOVERY_SDCARD_ON_DATA := true
+ TARGET_RECOVERY_QCOM_RTC_FIX := true
+-TW_EXCLUDE_DEFAULT_USB_INIT := true
+-TW_EXTRA_LANGUAGES := true
+-TW_INCLUDE_NTFS_3G := true
+-TW_USE_TOOLBOX := true
+-TW_INCLUDE_RESETPROP := true
+-TW_INPUT_BLACKLIST := "hbtp_vm"
+-TW_BRIGHTNESS_PATH := "/sys/class/backlight/panel0-backlight/brightness"
+-TW_DEFAULT_BRIGHTNESS := 1200
+-TW_Y_OFFSET := 91
+-TW_H_OFFSET := -91
+-TWRP_INCLUDE_LOGCAT := true
++AERA_EXCLUDE_DEFAULT_USB_INIT := true
++AERA_EXTRA_LANGUAGES := true
++AERA_INCLUDE_NTFS_3G := true
++AERA_USE_TOOLBOX := true
++AERA_INCLUDE_RESETPROP := true
++AERA_INPUT_BLACKLIST := "hbtp_vm"
++AERA_BRIGHTNESS_PATH := "/sys/class/backlight/panel0-backlight/brightness"
++AERA_DEFAULT_BRIGHTNESS := 1200
++AERA_INCLUDE_LOGCAT := true
+ TARGET_USES_LOGD := true
+ TARGET_USES_MKE2FS := true
+-TW_EXCLUDE_APEX := true
+-TW_FRAMERATE := 60
+-TW_INCLUDE_FASTBOOTD := true
++AERA_EXCLUDE_APEX := true
++AERA_FRAMERATE := 60
++AERA_INCLUDE_FASTBOOTD := true
+ 
+ #Properties
+-TW_OVERRIDE_SYSTEM_PROPS := \
++AERA_OVERRIDE_SYSTEM_PROPS := \
+     "ro.build.fingerprint=ro.system.build.fingerprint;ro.build.version.incremental"
+ 
+ # Vibrator
+-TW_SUPPORT_INPUT_AIDL_HAPTICS := true
++AERA_SUPPORT_INPUT_AIDL_HAPTICS := true
+ 
+ RECOVERY_LIBRARY_SOURCE_FILES += \
+-    $(TARGET_OUT_SHARED_LIBRARIES)/libion.so \
+-    $(TARGET_OUT_SYSTEM_EXT_SHARED_LIBRARIES)/vendor.display.config@1.0.so \
+-    $(TARGET_OUT_SYSTEM_EXT_SHARED_LIBRARIES)/vendor.display.config@2.0.so \
+-    $(TARGET_OUT_SYSTEM_EXT_SHARED_LIBRARIES)/libdisplayconfig.qti.so
++    $(TARGET_OUT_SHARED_LIBRARIES)/libion.so
++
++
++# Native UI geometry replaces the old XML-theme offsets.
++AERA_SCREEN_H := 2400
++AERA_STATUS_H := 96
++AERA_STATUS_INDENT_LEFT := 48
++AERA_STATUS_INDENT_RIGHT := 48
++AERA_DEFAULT_LANGUAGE := en
++
++TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
+ 
++# Legacy Qualcomm display source modules are absent from the AERA manifest.
++# Keep the upstream device overlay, without requesting those missing modules.
++# GPU/EGL integration remains a separate bring-up milestone.
+diff --git a/recovery/root/init.recovery.qcom.rc b/recovery/root/init.recovery.qcom.rc
+index a502247..7044244 100755
+--- a/recovery/root/init.recovery.qcom.rc
++++ b/recovery/root/init.recovery.qcom.rc
+@@ -27,13 +27,6 @@
+ 
+ import /init.recovery.qcom_decrypt.rc
+ 
+-service overrideprops /system/bin/overrideprops.sh
+-    user root
+-    group root
+-    disabled
+-    oneshot
+-    seclabel u:r:recovery:s0
+-
+ service vendor.qti.vibrator /system/bin/vendor.qti.hardware.vibrator.service
+     user root
+     group root
+@@ -48,6 +41,10 @@ service variant-script /system/bin/variant-script.sh
+     oneshot
+     seclabel u:r:recovery:s0
+ 
++# Read the installed ROM properties before the common crypto.ready gate.
++on init
++    setprop prepdecrypt.setpatch true
++
+ on fs
+     wait /dev/block/platform/soc/${ro.boot.bootdevice}
+     symlink /dev/block/platform/soc/${ro.boot.bootdevice} /dev/block/bootdevice
+@@ -67,7 +64,6 @@ on fs
+ 
+ on boot
+     start variant-script
+-    start overrideprops
+     start health-hal-2-1
+     start vendor.qti.vibrator
+     setprop sys.usb.config adb
+diff --git a/recovery/root/system/bin/overrideprops.sh b/recovery/root/system/bin/overrideprops.sh
+deleted file mode 100755
+index 72d49d9..0000000
+--- a/recovery/root/system/bin/overrideprops.sh
++++ /dev/null
+@@ -1,10 +0,0 @@
+-#!/system/bin/sh
+-
+-resetprop ro.build.date.utc 0000000000
+-resetprop ro.system.build.date.utc 0000000000
+-resetprop ro.system_ext.build.date.utc 0000000000
+-resetprop ro.vendor.build.date.utc 0000000000
+-resetprop ro.odm.build.date.utc 0000000000
+-resetprop ro.product.build.date.utc 0000000000
+-
+-exit 0
+diff --git a/recovery/root/system/etc/recovery.fstab b/recovery/root/system/etc/recovery.fstab
+index 46cd75b..922756a 100644
+--- a/recovery/root/system/etc/recovery.fstab
++++ b/recovery/root/system/etc/recovery.fstab
+@@ -46,5 +46,5 @@ vendor                                                                 /vendor
+ odm                                                                    /odm                   ext4    ro,barrier=1,discard                                 wait,avb,logical,first_stage_mount
+ odm                                                                    /odm                   erofs   ro                                                   wait,avb,logical,first_stage_mount
+ /dev/block/bootdevice/by-name/metadata                                 /metadata              ext4    noatime,nosuid,nodev,discard                         wait,formattable,wrappedkey,first_stage_mount
+-/dev/block/bootdevice/by-name/userdata                                 /data                  f2fs    noatime,nosuid,nodev,nodiscard,reserve_root=32768,resgid=1065,fsync_mode=nobarrier,inlinecrypt,background_gc=sync,gc_merge,atgc,checkpoint_merge,compress_algorithm=lz4,compress_extension=apk,compress_extension=apex,compress_extension=so    latemount,wait,check,formattable,fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized+wrappedkey_v0,wrappedkey,metadata_encryption=aes-256-xts:wrappedkey_v0,keydirectory=/metadata/vold/metadata_encryption,fscompress,quota,reservedsize=128M,sysfs_path=/sys/devices/platform/soc/1d84000.ufshc,checkpoint=fs
++/dev/block/bootdevice/by-name/userdata /data f2fs noatime,nosuid,nodev,discard,reserve_root=32768,resgid=1065,fsync_mode=nobarrier,inlinecrypt latemount,wait,check,formattable,fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized+wrappedkey_v0,metadata_encryption=aes-256-xts:wrappedkey_v0,keydirectory=/metadata/vold/metadata_encryption,quota,reservedsize=128M,checkpoint=fs
+ /dev/block/bootdevice/by-name/misc                                     /misc                  emmc    defaults                                             defaults
+diff --git a/recovery/root/system/etc/twrp.flags b/recovery/root/system/etc/twrp.flags
+index df85ce1..551ad7b 100644
+--- a/recovery/root/system/etc/twrp.flags
++++ b/recovery/root/system/etc/twrp.flags
+@@ -5,7 +5,7 @@
+ # mount point  fstype  device                             device2                flags
+ 
+ /metadata      ext4    /dev/block/bootdevice/by-name/metadata                    flags=display="Metadata";backup=1;wrappedkey
+-/data          f2fs    /dev/block/bootdevice/by-name/userdata                    flags=fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized+wrappedkey_v0,metadata_encryption=aes-256-xts:wrappedkey_v0,keydirectory=/metadata/vold/metadata_encryption,fscompress
++/data          f2fs    /dev/block/bootdevice/by-name/userdata                    flags=fileencryption=aes-256-xts:aes-256-cts:v2+inlinecrypt_optimized+wrappedkey_v0,metadata_encryption=aes-256-xts:wrappedkey_v0,keydirectory=/metadata/vold/metadata_encryption
+ /boot          emmc    /dev/block/bootdevice/by-name/boot
+ /dtbo          emmc    /dev/block/bootdevice/by-name/dtbo                        flags=backup=1;display="Dtbo";flashimg=1
+ /cache         ext4    /dev/block/bootdevice/by-name/cache
+diff --git a/twrp_sweet.mk b/twrp_sweet.mk
+index e693fdf..fd59893 100644
+--- a/twrp_sweet.mk
++++ b/twrp_sweet.mk
+@@ -18,7 +18,10 @@
+ PRODUCT_RELEASE_NAME := sweet
+ DEVICE_PATH := device/xiaomi/sweet
+ 
+-$(call inherit-product, $(SRC_TARGET_DIR)/product/aosp_base.mk)
++$(call inherit-product, $(SRC_TARGET_DIR)/product/base.mk)
++
++$(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit_only.mk)
++$(call inherit-product, $(SRC_TARGET_DIR)/product/emulated_storage.mk)
+ 
+ # Inherit from our custom product configuration
+ $(call inherit-product, vendor/twrp/config/common.mk)
+diff --git a/vendorsetup.sh b/vendorsetup.sh
+new file mode 100644
+index 0000000..1713c54
+--- /dev/null
++++ b/vendorsetup.sh
+@@ -0,0 +1,15 @@
++#!/usr/bin/env bash
++# SPDX-License-Identifier: Apache-2.0
++# Set AERA_BUILD_DEVICE in the invoking shell before sourcing envsetup.sh.
++if [[ "${AERA_BUILD_DEVICE:-}" == "sweet" ]]; then
++    export AERA_BUILD_STATUS=Unofficial
++    export AERA_BUILD_TYPE=Alpha
++    export AERA_PRODUCT_PREFIX=AERA
++    export AERA_VANILLA_BUILD=1
++    export AERA_AB_DEVICE=0
++    export AERA_ENABLE_ROOT_MANAGER=0
++    export AERA_ENABLE_MOBILE_DATA=0
++    export AERA_SUPPORT_FINGERPRINT=0
++    export AERA_TARGET_DEVICES="sweet,sweetin"
++    export TARGET_DEVICE_ALT="sweetin"
++fi
