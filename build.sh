@@ -14,8 +14,9 @@ done
 export AERA_BUILD_DEVICE=sweet
 source build/envsetup.sh
 lunch twrp_sweet-bp2a-eng
-if [[ "${TARGET_DEVICE:-}" != sweet ]]; then
-    printf 'Unexpected TARGET_DEVICE: %s\n' "${TARGET_DEVICE:-unset}" >&2
+resolved_device="$(get_build_var TARGET_DEVICE)"
+if [[ "$resolved_device" != sweet ]]; then
+    printf 'Unexpected TARGET_DEVICE: %s\n' "$resolved_device" >&2
     exit 1
 fi
 # Low default parallelism; select JOBS for the actual builder.
