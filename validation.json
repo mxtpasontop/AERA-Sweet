@@ -4,11 +4,66 @@
   "truncated_rejected": "FAIL: declared boot-image components exceed the file length.",
   "oversized_rejected": "FAIL: image exceeds the 128 MiB recovery partition.",
   "setup_roundtrip": "All tracked file payloads, plus vendorsetup.sh, match the adapted source.",
-  "limitations": "No recovery image has been generated yet. Hardware testing is deliberately deferred for this blind build.",
-  "actions_workflow": "actionlint v1.7.12 and Bash syntax checks passed; full CI validation of the pixel-format fix is pending.",
+  "limitations": "Blind build only. No phone boot, touch, decryption or storage-operation testing. Known vendor haptics and legacy display/secure-UI dependency gaps remain.",
+  "actions_workflow": "actionlint v1.7.12 and Bash syntax checks passed. Full Android 16 CI build, generated configuration JSON validation and basic image checks passed.",
   "configuration_json": {
     "original_tree": "Reproduced the exact JSON syntax error at line 40, column 30 with the Android 16 serializer.",
     "fixed_tree": "Valid JSON with RecoveryPixelFormat equal to RGBX_8888.",
     "early_failure_check": "Malformed configuration stops the helper after graph generation, before native compilation."
+  },
+  "full_build": {
+    "result": "success",
+    "run": "https://github.com/mxtpasontop/AERA-Sweet/actions/runs/42661897740",
+    "port_commit": "57c7c0f785cdd5069801cbabe5deca029f1ad88e",
+    "image": "AERA-sweet-UNTESTED.img",
+    "ci_checksum_matches_local_image": true,
+    "inspection": {
+      "image_sha256": "8f338e944ef7176f2a87f6c06c1860664e452599c85ab271e78ed683d58a5a8e",
+      "bytes": 134217728,
+      "pinned_component_matches": {
+        "kernel": true,
+        "dtbo": true,
+        "dtb": true
+      },
+      "ramdisk_compression": "gzip",
+      "ramdisk_uncompressed_bytes": 99063808,
+      "ramdisk_entries": 3824,
+      "essential_paths_present": {
+        "init": true,
+        "system/bin/recovery": true,
+        "system/bin/adbd": true,
+        "init.recovery.qcom.rc": true,
+        "system/etc/recovery.fstab": true,
+        "system/etc/twrp.flags": true,
+        "system/bin/prepdecrypt.sh": true,
+        "system/bin/qseecomd": true,
+        "system/bin/android.hardware.keymaster@4.1-service-qti": true,
+        "system/bin/android.hardware.gatekeeper@1.0-service-qti": true
+      },
+      "elf_files": 303,
+      "missing_dependency_names": {
+        "system/bin/vendor.qti.hardware.vibrator.service": [
+          "android.hardware.vibrator-V1-ndk_platform.so"
+        ],
+        "vendor/lib64/libdisplayconfig.qti.so": [
+          "vendor.display.config@2.0.so"
+        ],
+        "vendor/lib64/libsecureui.so": [
+          "vendor.display.config@1.0.so"
+        ],
+        "vendor/lib64/vendor.qti.hardware.vibrator.impl.so": [
+          "android.hardware.vibrator-V1-ndk_platform.so"
+        ]
+      },
+      "essential_binary_unresolved_chains": {
+        "init": [],
+        "system/bin/recovery": [],
+        "system/bin/adbd": [],
+        "system/bin/qseecomd": [],
+        "system/bin/android.hardware.keymaster@4.1-service-qti": [],
+        "system/bin/android.hardware.gatekeeper@1.0-service-qti": []
+      },
+      "limitation": "Library-name presence only; linker namespaces, symbols, services, boot and decryption are untested."
+    }
   }
 }
