@@ -28,6 +28,9 @@ jobs:
       AERA_BUILD_DEVICE: sweet
       JOBS: ${{ inputs.jobs }}
       USE_CCACHE: '0'
+      GOMEMLIMIT: 8GiB
+      GOGC: '50'
+      GOMAXPROCS: '2'
 
     steps:
       - name: Check out port and build helpers
@@ -79,7 +82,7 @@ jobs:
       - name: Build and check recovery image
         timeout-minutes: 180
         run: |
-          bash build.sh "$GITHUB_WORKSPACE/android" 2>&1 | tee artifacts/build.log
+          bash ci/build-and-monitor.sh "$GITHUB_WORKSPACE/android" 2>&1 | tee artifacts/build.log
           cp android/out/target/product/sweet/recovery.img artifacts/AERA-sweet-UNTESTED.img
           cd artifacts
           sha256sum AERA-sweet-UNTESTED.img > AERA-sweet-UNTESTED.img.sha256

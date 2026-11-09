@@ -16,6 +16,17 @@ df -h /
 sudo rm -rf -- /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /opt/microsoft/powershell
 sudo docker image prune --all --force
 sudo apt-get clean
+# Give the Android build graph more headroom on a standard 16 GB runner.
+swap_file="${RUNNER_TEMP:?RUNNER_TEMP is required}/aera-build.swap"
+if [[ -e "$swap_file" ]]; then
+    echo 'Refusing to overwrite an existing swap file.' >&2
+    exit 1
+fi
+sudo fallocate -l 12G "$swap_file"
+sudo chmod 600 "$swap_file"
+sudo mkswap "$swap_file"
+sudo swapon "$swap_file"
+free -h
 df -h /
 available_bytes="$(df --output=avail -B1 . | tail -n1 | tr -d ' ')"
 # Engineering preflight budget, not an upstream guaranteed space requirement.
