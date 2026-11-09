@@ -106,6 +106,9 @@ jobs:
             if [[ -f "$log" ]]; then cp "$log" artifacts/; fi
           done
           if [[ -f android/out/verbose.log.gz ]]; then cp android/out/verbose.log.gz artifacts/; fi
+          for config in android/out/soong/soong.twrp_sweet.variables android/out/soong/soong.twrp_sweet.extra.variables; do
+            if [[ -f "$config" ]]; then cp "$config" artifacts/; fi
+          done
 
       - name: Upload image, provenance and build logs
         if: always()

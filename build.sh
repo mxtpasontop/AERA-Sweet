@@ -20,5 +20,8 @@ if [[ "$resolved_device" != sweet ]]; then
     exit 1
 fi
 # Low default parallelism; select JOBS for the actual builder.
+m -j"${JOBS:-2}" --skip-ninja adbd recoveryimage
+build_out="$(get_build_var OUT_DIR)"
+python3 "$kit_dir/check_config_json.py" "$build_out/soong"
 m -j"${JOBS:-2}" adbd recoveryimage
-python3 "$kit_dir/check_image.py" out/target/product/sweet/recovery.img
+python3 "$kit_dir/check_image.py" "$build_out/target/product/sweet/recovery.img"

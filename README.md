@@ -44,7 +44,7 @@ bash /path/to/aera-sweet-bringup-kit/build.sh /path/to/AERA_16.0
 
 Setup refuses to overwrite an existing device tree. AERA's manifest tracks branches; save `repo manifest -r -o build-manifest.xml` alongside any resulting artifact to record the exact source revisions. The reference AERA revisions inspected for this adaptation were recovery `42ed6b66808200ce0d388bb0b4f05e4c2af4d207` and vendor/recovery `1f4b6e19882c83f95d1420872d0c31be0b97a7a6`.
 
-The build helper uses `export AERA_BUILD_DEVICE=sweet` before envsetup and `lunch twrp_sweet-bp2a-eng`. It builds `adbd recoveryimage`, then checks the generated image's partition budget and basic header. It does not flash anything. Integration errors may still appear on the first full Android 16 build.
+The build helper uses `export AERA_BUILD_DEVICE=sweet` before envsetup and `lunch twrp_sweet-bp2a-eng`. It first generates the build graph with `--skip-ninja` and validates the generated product-configuration JSON, then builds `adbd recoveryimage` and checks the image's partition budget and basic header. It does not flash anything. Integration errors may still appear on the first full Android 16 build.
 
 ## Build with GitHub Actions
 

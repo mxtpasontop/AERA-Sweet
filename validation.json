@@ -4,6 +4,11 @@
   "truncated_rejected": "FAIL: declared boot-image components exceed the file length.",
   "oversized_rejected": "FAIL: image exceeds the 128 MiB recovery partition.",
   "setup_roundtrip": "All tracked file payloads, plus vendorsetup.sh, match the adapted source.",
-  "limitations": "No Android build, boot test, decryption test or hardware feature test has run.",
-  "actions_workflow": "actionlint v1.7.12 passed; bash syntax checks passed. No remote workflow run yet."
+  "limitations": "No recovery image has been generated yet. Hardware testing is deliberately deferred for this blind build.",
+  "actions_workflow": "actionlint v1.7.12 and Bash syntax checks passed; full CI validation of the pixel-format fix is pending.",
+  "configuration_json": {
+    "original_tree": "Reproduced the exact JSON syntax error at line 40, column 30 with the Android 16 serializer.",
+    "fixed_tree": "Valid JSON with RecoveryPixelFormat equal to RGBX_8888.",
+    "early_failure_check": "Malformed configuration stops the helper after graph generation, before native compilation."
+  }
 }
