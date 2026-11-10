@@ -1,7 +1,11 @@
 # Initial AERA bring-up for Redmi Note 10 Pro (`sweet`)
 
-Target ROM: LineageOS 23.2. Status: **first Android 16 blind build completed; hardware untested**.
+Target ROM: LineageOS 23.2. Status: **build completed, but the first device recovery-boot test failed**.
 This source package contains a patch and setup/build helpers. The recovery image is a separate build artifact, not an installer ZIP. Compilation and structural checks do not establish that the phone will boot or decrypt.
+
+On 2026-11-10, the tester reported that the original header-v2 AERA image returns directly to fastboot after being flashed to recovery. Temporary `fastboot boot` also fails on this device and is not a useful independent test. DTBO was restored. Read-only queries confirmed `sweet`, unlocked bootloader, bootloader fastboot, and a 128 MiB recovery partition. The original image's AVB signature and hash both verify, so the generic load/authentication error alone does not establish a bad signature.
+
+The tester supplied a working OrangeFox R12.0_2 image using a different kernel with appended DTB and header v1. A local diagnostic candidate now combines that exact kernel/DTB/DTBO and boot layout with the unchanged AERA gzip ramdisk. It temporarily retains the working template's `99.87.36` / `2099-12-31` compatibility metadata; these are not real OS/security versions. Its AVB signature/hash and component comparisons pass, but its device boot result is pending. The source tree has not been switched to this baseline pending that result.
 
 The [successful build](https://github.com/mxtpasontop/AERA-Sweet/actions/runs/42661897740) used port commit `57c7c0f785cdd5069801cbabe5deca029f1ad88e`. Its `AERA-sweet-5-success` artifact contains `AERA-sweet-UNTESTED.img`, logs and the exact source manifest. GitHub artifact retention is seven days; retain a local copy. The image is 134,217,728 bytes including AVB padding, within the 128 MiB partition budget.
 

@@ -4,7 +4,7 @@
   "truncated_rejected": "FAIL: declared boot-image components exceed the file length.",
   "oversized_rejected": "FAIL: image exceeds the 128 MiB recovery partition.",
   "setup_roundtrip": "All tracked file payloads, plus vendorsetup.sh, match the adapted source.",
-  "limitations": "Blind build only. No phone boot, touch, decryption or storage-operation testing. Known vendor haptics and legacy display/secure-UI dependency gaps remain.",
+  "limitations": "Original CI image failed recovery boot on the tester device. Local OrangeFox-baseline diagnostic image has not been hardware-tested. Known vendor dependency gaps remain.",
   "actions_workflow": "actionlint v1.7.12 and Bash syntax checks passed. Full Android 16 CI build, generated configuration JSON validation and basic image checks passed.",
   "configuration_json": {
     "original_tree": "Reproduced the exact JSON syntax error at line 40, column 30 with the Android 16 serializer.",
@@ -64,6 +64,35 @@
         "system/bin/android.hardware.gatekeeper@1.0-service-qti": []
       },
       "limitation": "Library-name presence only; linker namespaces, symbols, services, boot and decryption are untested."
+    }
+  },
+  "device_test": {
+    "date": "2026-11-10",
+    "original_ci_image_result": "Returns directly to fastboot after flashing to recovery.",
+    "temporary_boot": "Reported broken on the device; not an independent discriminator.",
+    "dtbo_partition": "Tester confirms restored.",
+    "read_only_device_queries": {
+      "product": "sweet",
+      "unlocked": "yes",
+      "is-userspace": "no",
+      "recovery_partition_bytes": 134217728
+    },
+    "original_image_avb_signature_and_hash": "Both verify with avbtool.",
+    "working_baseline": "OrangeFox R12.0_2-sweet, header v1 with appended DTB.",
+    "diagnostic_candidate": {
+      "image": "AERA-sweet-OFBASE-DIAG-01.img",
+      "sha256": "494aa428d02f12e12e8ea782267d3cff7290f0d5f847644d15bd87f627503ed2",
+      "bytes": 134217728,
+      "working_orangefox_sha256": "91b1b7bc78d5b7499aff608f6a98f9e9a7f44021595648216abdabcf3dd25666",
+      "aera_source_sha256": "8f338e944ef7176f2a87f6c06c1860664e452599c85ab271e78ed683d58a5a8e",
+      "header_version": 1,
+      "page_size": 4096,
+      "working_orangefox_kernel_and_appended_dtb_unchanged": true,
+      "working_orangefox_recovery_dtbo_unchanged": true,
+      "aera_gzip_ramdisk_unchanged": true,
+      "avb_signature_and_hash_verified": true,
+      "diagnostic_os_metadata": "Retains the working OrangeFox template values 99.87.36 / 2099-12-31. These are compatibility placeholders, not real OS/security versions.",
+      "status": "Untested diagnostic candidate. Original header-v2 AERA image failed recovery boot on the user device."
     }
   }
 }
