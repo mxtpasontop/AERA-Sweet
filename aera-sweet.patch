@@ -1,5 +1,5 @@
 diff --git a/BoardConfig.mk b/BoardConfig.mk
-index 01c6a9f..1c33b42 100644
+index 01c6a9f..3e40a3d 100644
 --- a/BoardConfig.mk
 +++ b/BoardConfig.mk
 @@ -14,6 +14,8 @@
@@ -52,7 +52,7 @@ index 01c6a9f..1c33b42 100644
 +AERA_INCLUDE_CRYPTO_FBE := true
 +AERA_INCLUDE_FBE_METADATA_DECRYPT := true
 +AERA_USE_FSCRYPT_POLICY := 2
-+AERA_ENABLE_WLAN := 0
++AERA_ENABLE_WLAN := 1
 +AERA_ENABLE_ROOT_MANAGER := 0
 +AERA_ENABLE_MOBILE_DATA := 0
 +AERA_SUPPORT_FINGERPRINT := 0
