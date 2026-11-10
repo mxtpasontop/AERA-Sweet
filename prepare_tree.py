@@ -27,7 +27,7 @@ def main():
     subprocess.run(['git', '-C', str(dest), 'apply', '--check', str(patch)], check=True)
     subprocess.run(['git', '-C', str(dest), 'apply', str(patch)], check=True)
     print('Initial AERA source adaptation created at', dest)
-    print('UNBUILT / UNTESTED. No flashable recovery image has been produced.')
+    print('Source setup only. Run build.sh and package_boot.py before device testing.')
 
 if __name__ == '__main__':
     main()

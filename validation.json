@@ -4,7 +4,7 @@
   "truncated_rejected": "FAIL: declared boot-image components exceed the file length.",
   "oversized_rejected": "FAIL: image exceeds the 128 MiB recovery partition.",
   "setup_roundtrip": "All tracked file payloads, plus vendorsetup.sh, match the adapted source.",
-  "limitations": "Original image and diagnostic 01 both failed device recovery boot. Diagnostic 02 changes only ramdisk compression and is awaiting a boot test. Root cause remains unknown.",
+  "limitations": "Diagnostic 03 is tested for boot, touch, ADB and decryption/file access on the tester setup. Optional hardware and install/backup/restore operations remain unverified; known vendor dependency gaps remain.",
   "actions_workflow": "actionlint v1.7.12 and Bash syntax checks passed. Full Android 16 CI build, generated configuration JSON validation and basic image checks passed.",
   "configuration_json": {
     "original_tree": "Reproduced the exact JSON syntax error at line 40, column 30 with the Android 16 serializer.",
@@ -112,7 +112,47 @@
       "compressed_ramdisk_bytes": 26650516,
       "avb_signature_and_hash_verified": true,
       "diagnostic_os_metadata": "Retains the working OrangeFox template values 99.87.36 / 2099-12-31. These are compatibility placeholders, not real OS/security versions.",
-      "status": "Untested diagnostic candidate. Original image and diagnostic 01 both failed recovery boot on the user device."
-    }
+      "status": "Boot, display, touch and ADB confirmed; decryption was blocked by the helper path."
+    },
+    "diagnostic_03": {
+      "image": "AERA-sweet-OFBASE-DIAG-03-CRYPTO.img",
+      "sha256": "8cc2586fa216b5113e6b138cd654c4b50f20e525a39b9a4b40a0a5bc1445602e",
+      "bytes": 134217728,
+      "working_orangefox_sha256": "91b1b7bc78d5b7499aff608f6a98f9e9a7f44021595648216abdabcf3dd25666",
+      "aera_source_sha256": "8f338e944ef7176f2a87f6c06c1860664e452599c85ab271e78ed683d58a5a8e",
+      "header_version": 1,
+      "page_size": 4096,
+      "working_orangefox_kernel_and_appended_dtb_unchanged": true,
+      "working_orangefox_recovery_dtbo_unchanged": true,
+      "aera_compressed_ramdisk_unchanged": false,
+      "aera_uncompressed_cpio_archive_unchanged": false,
+      "crypto_mapper_path_fix": true,
+      "uncompressed_cpio_sha256": "3ba30a012e322babf0f9c1d85fe3c21e24ddccb905962c4f43efcf3744220ac5",
+      "ramdisk_compression": "lzma",
+      "compressed_ramdisk_bytes": 26655224,
+      "avb_signature_and_hash_verified": true,
+      "diagnostic_os_metadata": "Retains the working OrangeFox template values 99.87.36 / 2099-12-31. These are compatibility placeholders, not real OS/security versions.",
+      "status": "Boot, display, touch, ADB, metadata/user-0 decryption and visible internal files confirmed on LineageOS 23.2."
+    },
+    "confirmed": [
+      "boot",
+      "display",
+      "touch",
+      "ADB",
+      "metadata decryption",
+      "user 0 decryption",
+      "F2FS /data mount",
+      "tester-visible internal files"
+    ],
+    "credential_scope": "Current tester setup only; logs include default-password unlock. PIN/password-protected cases are not separately characterized."
+  },
+  "packaging_workflow": {
+    "portable_tool": "package_boot.py",
+    "verified_reproductions": {
+      "original_ci_to_diagnostic_02": "71d92d96f1ec133283ec6daaa47399de845dca96ffc6e361e0b15ddeccd1f8e9",
+      "diagnostic_03_roundtrip": "8cc2586fa216b5113e6b138cd654c4b50f20e525a39b9a4b40a0a5bc1445602e"
+    },
+    "helper_patch": "Applies cleanly to pinned original helper and passes reverse/idempotence check.",
+    "workflow": "actionlint and Bash syntax checks pass; updated full workflow not yet rerun."
   }
 }

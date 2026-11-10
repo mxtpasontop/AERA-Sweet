@@ -11,6 +11,15 @@ for required in build/envsetup.sh bootable/recovery/aera_config.mk vendor/twrp/c
         exit 1
     fi
 done
+# Read installed-ROM crypto properties through the logical partition devices.
+qcom_root=device/qcom/twrp-common
+crypto_patch="$kit_dir/ci/prepdecrypt-dynamic-paths.patch"
+if git -C "$qcom_root" apply --reverse --check "$crypto_patch" 2>/dev/null; then
+    printf 'Dynamic-partition crypto helper patch is already applied.\n'
+else
+    git -C "$qcom_root" apply --check "$crypto_patch"
+    git -C "$qcom_root" apply "$crypto_patch"
+fi
 export AERA_BUILD_DEVICE=sweet
 source build/envsetup.sh
 lunch twrp_sweet-bp2a-eng

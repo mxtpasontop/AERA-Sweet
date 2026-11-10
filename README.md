@@ -1,91 +1,78 @@
-# Initial AERA bring-up for Redmi Note 10 Pro (`sweet`)
+# AERA Recovery for Redmi Note 10 Pro (`sweet`)
 
-Target ROM: LineageOS 23.2. Status: **build completed, but the first device recovery-boot test failed**.
-This source package contains a patch and setup/build helpers. The recovery image is a separate build artifact, not an installer ZIP. Compilation and structural checks do not establish that the phone will boot or decrypt.
+Unofficial / Alpha, targeting LineageOS 23.2 / Android 16. **Boot, display, touch, ADB, metadata decryption and access to the owner's internal files were confirmed on 2026-11-10 with diagnostic 03.**
 
-On 2026-11-10, the tester reported that the original header-v2 AERA image returns directly to fastboot after being flashed to recovery. Temporary `fastboot boot` also fails on this device and is not a useful independent test. DTBO was restored. Read-only queries confirmed `sweet`, unlocked bootloader, bootloader fastboot, and a 128 MiB recovery partition. The original image's AVB signature and hash both verify, so the generic load/authentication error alone does not establish a bad signature.
+Tested image: `AERA-sweet-OFBASE-DIAG-03-CRYPTO.img`, 134,217,728 bytes including AVB padding.
 
-The tester supplied a working OrangeFox R12.0_2 image using a different kernel with appended DTB and header v1. Local diagnostic 01 combined that exact kernel/DTB/DTBO and boot layout with the unchanged AERA gzip ramdisk. It also returned directly to fastboot. Both images have valid AVB signatures and hashes; the root cause remains unknown. Working OrangeFox was restored, but pstore was empty and `/proc/last_kmsg` was unavailable, so no previous crash log could be collected.
+SHA-256: `8cc2586fa216b5113e6b138cd654c4b50f20e525a39b9a4b40a0a5bc1445602e`
 
-Diagnostic 02 keeps the same OrangeFox boot components and unchanged uncompressed AERA archive, replacing only the ramdisk compression with kernel-supported LZMA. The compressed payload is 26,650,516 bytes, versus 40,064,533 for AERA gzip and 31,838,013 for working OrangeFox gzip. This is a packaging-size/compression test, not an established fix. Both diagnostics temporarily retain the working template's `99.87.36` / `2099-12-31` compatibility metadata; these are not real OS/security versions. Diagnostic 02 passes AVB verification and byte comparisons and is awaiting a device test. The source tree has not been switched to this baseline pending that result.
+Recovery logs confirm the crypto helper completes, metadata maps to `/dev/block/mapper/userdata`, user 0 decrypts, and `/data` mounts as F2FS. The tester confirmed visible files. This establishes decryption on that installed setup; credential-protected PIN/password cases have not been separately characterized.
 
-The [successful build](https://github.com/mxtpasontop/AERA-Sweet/actions/runs/42661897740) used port commit `57c7c0f785cdd5069801cbabe5deca029f1ad88e`. Its `AERA-sweet-5-success` artifact contains `AERA-sweet-UNTESTED.img`, logs and the exact source manifest. GitHub artifact retention is seven days; retain a local copy. The image is 134,217,728 bytes including AVB padding, within the 128 MiB partition budget.
+## What fixed bring-up
 
-SHA-256: `8f338e944ef7176f2a87f6c06c1860664e452599c85ab271e78ed683d58a5a8e`
+The final boot package uses header v1, 4096-byte pages, a kernel with appended DTB, embedded recovery DTBO, and an LZMA ramdisk. Boot components come together from the exact working OrangeFox R12.0_2 release. The kernel advertises `CONFIG_RD_LZMA=y`.
 
-Local inspection verified the v2 header, 4096-byte pages, gzip ramdisk, and exact kernel/DTB/DTBO matches to the pinned TeamWin tree. Essential init, recovery, ADB and crypto paths are present. A library-name inventory found no missing dependency names in their static dependency chains; this does not verify linker namespaces, symbols or runtime behavior.
+The original v2/gzip build and v1/gzip diagnostic returned to fastboot. Recompressing the identical AERA archive with LZMA reduced the compressed payload from 40,064,533 to 26,650,516 bytes and booted. No exact bootloader size limit has been established.
 
-## Device trees found
+Decryption then failed because `prepdecrypt.sh` looked for physical `by-name/system` and `by-name/vendor` devices on a dynamic-partition ROM. `ci/prepdecrypt-dynamic-paths.patch` prefers existing mapper devices and retains physical-path fallback. Read-only checks verified the installed system/vendor properties through those mapper devices. Diagnostic 03 changes only that script inside diagnostic 02's ramdisk and successfully decrypts data. Earlier F2FS magic errors were from probing raw encrypted userdata before its metadata mapping existed; they did not establish filesystem corruption.
 
-- TeamWin base: https://github.com/TeamWin/android_device_xiaomi_sweet/tree/android-12.1
-- OrangeFox alternative: https://github.com/basamaryan/android_device_xiaomi_sweet-TWRP/tree/fox_12.1
-- Matching ROM tree: https://github.com/LineageOS/android_device_xiaomi_sweet/tree/lineage-23.2
-- Matching ROM common configuration: https://github.com/LineageOS/android_device_xiaomi_sm6150-common/tree/lineage-23.2
-- AERA bring-up guide: https://aera-recovery.com/wiki/#bringup
-- AERA manifest/build instructions: https://github.com/AERA-Recovery/android_manifest/tree/aera-16.0
+The boot container retains the working template's `99.87.36` / `2099-12-31` compatibility placeholders. **These are not the real Android version or security status.** The AERA userspace keeps its actual build properties; prepdecrypt reads the installed ROM's real properties before the `crypto.ready` service gate.
 
-The TeamWin base is pinned to `fa9c73d950de604bf5ac057ec0b93661f9d6bc60` (2023-11-15). It is a starting point, not proof of compatibility with LineageOS 23.2. The OrangeFox alternative was inspected at `ff50d886eafdb54989d1ddcd6dee5266fc5b50df`; it has a different kernel layout/header and must not be mixed into this tree piecemeal.
+## Source and boot-template provenance
 
-## Adaptation
+- Compile-tree base: [TeamWin sweet android-12.1](https://github.com/TeamWin/android_device_xiaomi_sweet/tree/android-12.1), pinned to `fa9c73d950de604bf5ac057ec0b93661f9d6bc60`, plus `aera-sweet.patch`.
+- Recovery sources: [AERA Android 16 manifest](https://github.com/AERA-Recovery/android_manifest/tree/aera-16.0). Save the resolved manifest for each build. The tested userspace came from [run 42661897740](https://github.com/mxtpasontop/AERA-Sweet/actions/runs/42661897740), recovery revision `42ed6b66808200ce0d388bb0b4f05e4c2af4d207`.
+- Boot baseline: [official OrangeFox R12.0_2 for sweet](https://orangefox.download/release/6a107f7a192e80d0717207e1), maintained by Mostafameesr. The publisher's ZIP and image MD5 values were checked, and SHA-256 pins are enforced by the packager.
+- ZIP SHA-256: `5ba70d54d69ad40b1c874d29ca90da69f26e384db174bdae31f149577923d42c`.
+- Embedded template image SHA-256: `91b1b7bc78d5b7499aff608f6a98f9e9a7f44021595648216abdabcf3dd25666`.
+- Matching ROM trees: [sweet](https://github.com/LineageOS/android_device_xiaomi_sweet/tree/lineage-23.2) and [sm6150-common](https://github.com/LineageOS/android_device_xiaomi_sm6150-common/tree/lineage-23.2).
 
-- Uses the AERA public flag namespace, native interface geometry, and Android 16 product inheritance.
-- Keeps the TeamWin kernel, DTB, DTBO, device init and USB adaptation. Boot header v2, 4096-byte pages, dedicated 128 MiB recovery; no A/B conversion.
-- Aligns the dynamic group budget to LineageOS's 4 MiB super metadata reserve.
-- Keeps wrapped-key FBE v2 and metadata encryption, matching LineageOS 23.2's UFS `/data` configuration.
-- Removes compression-specific F2FS mount flags: the base kernel's embedded config has `CONFIG_F2FS_FS_COMPRESSION` disabled. LineageOS's current data fstab does not require those flags.
-- Removes the fake `99.87.36` OS and `2099-12-31` patch values and the build-date reset service. Enables the common Qualcomm prepdecrypt path to obtain installed-ROM properties before starting crypto services.
-- Removes requests for old Qualcomm display source modules/namespaces absent from AERA's manifest. The inherited vendor overlay remains. Hardware EGL/GLES and complete graphics dependency packaging are outstanding work.
-- Marks the result Unofficial / Alpha. WLAN, cellular, root manager and fingerprint support remain disabled during the initial bring-up.
+This repository stores patches and tools, not redistributed vendor/prebuilt binaries. Setup and packaging fetch upstream assets directly. Existing authorship and licensing notices remain; upstream assets retain their licensing requirements. An older inspected OrangeFox device tree had different binaries and is not a substitute for the pinned release.
 
-Known ramdisk dependency gaps: the inherited vibrator service and implementation request `android.hardware.vibrator-V1-ndk_platform.so`, which is absent. The legacy `libdisplayconfig.qti.so` and `libsecureui.so` request absent `vendor.display.config@2.0.so` and `vendor.display.config@1.0.so`, respectively. Haptics and these display/secure-UI paths need follow-up. These libraries were not on the inspected init/recovery/ADB/keymaster/gatekeeper static dependency chains; dynamically loaded paths and hardware behavior remain unverified. See `validation.json` for the inventory.
+## GitHub Actions
 
-Existing copyright and license notices stay in the source. The package does not redistribute vendor binaries; setup fetches the unmodified upstream assets directly. Upstream assets retain their original licensing requirements.
+Open **Actions → Build AERA for sweet → Run workflow** and choose a job count. Four jobs were used for the successful full compilation. The workflow is manual, uses standard `ubuntu-24.04`, and does not flash a phone or publish a release.
 
-## Prepare and build on Linux
+The workflow:
 
-Use a Linux builder with enough storage for the complete Android source and build output. The hosted build synced roughly 76 GiB of sources and required additional space for outputs and swap. WSL's virtual disk capacity does not add physical free space.
+1. Reclaims optional tools on the disposable hosted runner, adds 12 GiB swap, and syncs AERA.
+2. Applies the pinned device patch and narrowly forwards Go resource settings into Soong's otherwise isolated environment.
+3. Applies the dynamic-partition crypto helper patch idempotently, generates the build graph, checks product JSON, and compiles `adbd recoveryimage`.
+4. Downloads the pinned official OrangeFox ZIP and runs `package_boot.py`, preserving the compiled AERA ramdisk contents while using the tested v1/LZMA boot packaging.
+5. Verifies the final AVB signature/hash, component identity, CPIO roundtrip and 128 MiB budget. Uploads image, checksum, packaging report, source revisions, exact patches and logs. Retention is seven days.
 
-Install the Android build prerequisites and the `repo` tool on the builder, then initialize and sync AERA as documented upstream:
+The intermediate v2/gzip image in the Android output directory is a compile artifact; use the final packaged artifact. Newly compiled images remain named `AERA-sweet-UNTESTED.img` because the tested configuration does not automatically validate every future source revision.
 
-```bash
-mkdir -p /path/to/AERA_16.0
-cd /path/to/AERA_16.0
-repo init -u https://github.com/AERA-Recovery/android_manifest.git -b aera-16.0
-repo sync -c --no-clone-bundle --no-tags -j4
-python3 /path/to/aera-sweet-bringup-kit/prepare_tree.py device/xiaomi/sweet
-bash /path/to/aera-sweet-bringup-kit/build.sh /path/to/AERA_16.0
-```
+The updated workflow passes actionlint and shell syntax checks. The packager was exercised on real CI output and reproduced diagnostic 02 exactly; it also reproduced the boot/touch/decryption-tested diagnostic 03 byte-for-byte. The complete updated workflow has not yet been rerun end-to-end.
 
-Setup refuses to overwrite an existing device tree. AERA's manifest tracks branches; save `repo manifest -r -o build-manifest.xml` alongside any resulting artifact to record the exact source revisions. The reference AERA revisions inspected for this adaptation were recovery `42ed6b66808200ce0d388bb0b4f05e4c2af4d207` and vendor/recovery `1f4b6e19882c83f95d1420872d0c31be0b97a7a6`.
+## Build and package on Linux
 
-The build helper uses `export AERA_BUILD_DEVICE=sweet` before envsetup and `lunch twrp_sweet-bp2a-eng`. It first generates the build graph with `--skip-ninja` and validates the generated product-configuration JSON, then builds `adbd recoveryimage` and checks the image's partition budget and basic header. It does not flash anything. The full Android 16 build passed; future upstream changes may introduce new integration errors.
-
-## Build with GitHub Actions
-
-The repository root includes `.github/workflows/build-sweet.yml`. In GitHub, open **Actions → Build AERA for sweet → Run workflow** and select a job count (default 2). The workflow runs only when manually dispatched.
-
-It reclaims unused tools on the disposable `ubuntu-24.04` hosted runner, installs build dependencies, shallow-syncs AERA, applies the pinned sweet patch, and builds the image. The artifact includes `AERA-sweet-UNTESTED.img`, its SHA-256, the exact synced manifest, port/upstream commit IDs, and logs. Logs are also uploaded on failure. Artifact retention is seven days. It does not publish a release or flash a phone.
-
-The hosted-runner setup adds 12 GiB of swap. A narrow patch forwards `GOGC`, `GOMEMLIMIT` and `GOMAXPROCS` into Soong's otherwise empty builder environment. The workflow requests a 10 GiB Go memory target and concurrency of two, and records resources and the effective runtime settings every 45 seconds. The exact build-system patch is included in the artifacts. These settings address limited runner resources; they do not replace device compatibility testing.
-
-GitHub documents 14 GB of storage available on a standard Linux runner: https://docs.github.com/en/actions/reference/runners/github-hosted-runners . Cleanup reclaims optional preinstalled toolchains, but the amount recovered depends on the runner image. A 50 GiB post-cleanup preflight is an engineering budget, not a guarantee that this AERA build fits. If the sync/build exhausts space, use a larger configured Linux runner or a sufficiently provisioned self-hosted machine. Do not remove Android source directories speculatively to hide missing storage. `ci/prepare-runner.sh` refuses to run outside a GitHub-hosted Linux VM.
-
-## Required before calling this a working port
-
-1. Resolve the known vendor dependency gaps and inspect runtime graphics and crypto behavior. The full build and initial ramdisk inventory have passed; this is not a hardware validation result.
-2. Verify the resulting header, kernel and partition size against the phone's known-good recovery. Retain that recovery and a working bootloader restore route.
-3. Test display, touch, brightness and ADB first using a device-supported nonpersistent boot route if available. A usable UI and accelerated GPU rendering are separate milestones.
-4. On the exact LineageOS build, test skipped unlock, no-passcode and PIN/password unlock. Confirm filenames and file contents are readable. Do not format data to mask a decryption failure.
-5. Verify read-only storage access, removable storage, USB, MTP, fastbootd and reboot paths; then test install and backup/restore on an appropriate test setup.
-6. Bring up optional Wi-Fi, GPU acceleration, audio, cellular and other hardware separately using compatible firmware/libraries. Their availability on other AERA devices does not provide them on sweet.
-
-Useful local evidence after an attempted recovery boot:
+Sync AERA as documented [upstream](https://aera-recovery.com/wiki/#bringup), then from its source root:
 
 ```bash
-adb pull /tmp/recovery.log
-adb logcat -d -b all > logcat.txt
-adb shell dmesg > dmesg.txt
-adb shell getprop > properties.txt
+python3 /path/to/kit/prepare_tree.py device/xiaomi/sweet
+bash /path/to/kit/build.sh "$PWD"
+curl --fail --location --retry 3 \
+  https://dl.orangefox.download/6a107f7a192e80d0717207e1 \
+  -o /path/to/OrangeFox-R12.0_2-sweet.zip
+python3 /path/to/kit/package_boot.py \
+  --aera out/target/product/sweet/recovery.img \
+  --template-zip /path/to/OrangeFox-R12.0_2-sweet.zip \
+  --mkbootimg system/tools/mkbootimg/mkbootimg.py \
+  --avbtool external/avb/avbtool.py \
+  --key external/avb/test/data/testkey_rsa4096.pem \
+  --output /path/to/AERA-sweet-UNTESTED.img
+repo manifest -r -o /path/to/build-manifest.xml
 ```
 
-Review logs for personal data before sharing. Until real-device validation is complete, this remains an untested initial bring-up.
+Python 3, OpenSSL, Git and the normal Android build dependencies are required. Setup refuses an existing device-tree destination; packaging refuses to overwrite an existing output. The full source sync used roughly 76 GiB, with additional space needed for output and swap. The build helper selects `twrp_sweet-bp2a-eng` and keeps wrapped-key FBE v2/metadata encryption and the dedicated 128 MiB A-only recovery layout. Nothing here formats or flashes a phone.
+
+## Remaining limitations
+
+- WLAN, cellular, fingerprint and Root Manager are disabled.
+- Haptics and legacy display/secure-UI blobs have unresolved dependency names: `android.hardware.vibrator-V1-ndk_platform.so`, `vendor.display.config@1.0.so` and `vendor.display.config@2.0.so`. Core UI and decryption work on the tested device; these other paths need follow-up.
+- Hardware GPU acceleration and audio are unverified. A visible UI does not establish either.
+- MTP, fastbootd, ZIP/image installation, backup/restore, removable storage and all reboot paths have not been validated in this bring-up. Do not treat boot success as proof those operations work.
+- The current tester reports temporary `fastboot boot` is broken on this phone. Recovery-partition boot was used for validation; keep a known-working recovery and the ROM-matched DTBO.
+
+Raw device logs remain local because they can contain identifiers and filenames. `validation.json` contains sanitized evidence and the tested artifact hashes.

@@ -1,0 +1,23 @@
+diff --git a/crypto/system/bin/prepdecrypt.sh b/crypto/system/bin/prepdecrypt.sh
+index 93bfa57..1188c29 100644
+--- a/crypto/system/bin/prepdecrypt.sh
++++ b/crypto/system/bin/prepdecrypt.sh
+@@ -340,12 +340,18 @@ if [ "$sdkver" -ge 26 ]; then
+ 		BUILDPROP="build.prop"
+ 		TEMPSYS=/s
+ 		syspath="/dev/block/bootdevice/by-name/system$suffix"
++		if [ -b "/dev/block/mapper/system$suffix" ]; then
++			syspath="/dev/block/mapper/system$suffix"
++		fi
+ 
+ 		if [ "$sdkver" -ge 29 ]; then
+ 			SAR=true
+ 			MNT_VENDOR=true
+ 			TEMPVEN=/v
+ 			venpath="/dev/block/bootdevice/by-name/vendor$suffix"
++			if [ -b "/dev/block/mapper/vendor$suffix" ]; then
++				venpath="/dev/block/mapper/vendor$suffix"
++			fi
+ 
+ 			temp_mount "$TEMPVEN" "vendor" "$venpath"
+ 

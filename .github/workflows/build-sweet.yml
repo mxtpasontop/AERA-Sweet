@@ -82,6 +82,7 @@ jobs:
         run: |
           python3 prepare_tree.py "$GITHUB_WORKSPACE/android/device/xiaomi/sweet"
           cp aera-sweet.patch artifacts/
+          cp ci/prepdecrypt-dynamic-paths.patch artifacts/
           git rev-parse HEAD > artifacts/port-commit.txt
           git -C android/bootable/recovery rev-parse HEAD > artifacts/recovery-commit.txt
           git -C android/vendor/recovery rev-parse HEAD > artifacts/vendor-commit.txt
@@ -90,11 +91,20 @@ jobs:
         timeout-minutes: 180
         run: |
           bash ci/build-and-monitor.sh "$GITHUB_WORKSPACE/android" 2>&1 | tee artifacts/build.log
-          cp android/out/target/product/sweet/recovery.img artifacts/AERA-sweet-UNTESTED.img
+          curl --fail --location --retry 3 \
+            https://dl.orangefox.download/6a107f7a192e80d0717207e1 \
+            -o "$RUNNER_TEMP/OrangeFox-R12.0_2-sweet.zip"
+          python3 package_boot.py \
+            --aera android/out/target/product/sweet/recovery.img \
+            --template-zip "$RUNNER_TEMP/OrangeFox-R12.0_2-sweet.zip" \
+            --mkbootimg android/system/tools/mkbootimg/mkbootimg.py \
+            --avbtool android/external/avb/avbtool.py \
+            --key android/external/avb/test/data/testkey_rsa4096.pem \
+            --output artifacts/AERA-sweet-UNTESTED.img
           cd artifacts
           sha256sum AERA-sweet-UNTESTED.img > AERA-sweet-UNTESTED.img.sha256
-          printf 'Built successfully. Device boot, touch, decryption and storage operations remain untested.\n' > STATUS.txt
-          echo 'Recovery image built and structurally checked; real-device validation is pending.' >> "$GITHUB_STEP_SUMMARY"
+          printf 'Built and packaged with the configuration tested in diagnostic 03. This newly compiled image still requires device validation.\n' > STATUS.txt
+          echo 'Image packaged with the pinned header-v1/LZMA boot configuration and dynamic-partition crypto helper fix. This new build is not yet device-tested.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Collect diagnostics
         if: always()
